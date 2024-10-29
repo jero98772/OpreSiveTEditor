@@ -1,9 +1,10 @@
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Request
 from fastapi.responses import HTMLResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 import subprocess
 import os
 from pathlib import Path
+import json
 
 app = FastAPI()
 
@@ -70,10 +71,33 @@ async def load_file(file_path: str):
         }
         mode = language_map.get(extension, "plaintext")  # Default to plain text if unknown
 
-        return {"content": content, "mode": mode}
+        return {"content": content, "mode": mode,"file_path":file_path}
     except FileNotFoundError:
         raise HTTPException(status_code=404, detail="File not found")
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
-# To run the server, use the following command in the terminal:
-# uvicorn main:app --reload
+
+@app.post("/save-file/")
+async def save_file(request: Request):
+    try:
+        # Read the JSON body directly
+        data = await request.json()
+        
+        # Extract file_path and content
+        file_path = data.get("file_path")
+        content = data.get("content")
+
+        # Ensure both fields are provided
+        if not file_path or not content:
+            raise HTTPException(status_code=400, detail="file_path and content are required")
+
+        # Ensure the directory exists
+        os.makedirs(os.path.dirname(file_path), exist_ok=True)
+
+        # Write content to the specified file
+        with open(file_path, 'w', encoding='utf-8') as f:
+            f.write(content)
+
+        return {"message": "File saved successfully"}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail="Failed to save file") from e

@@ -87,6 +87,20 @@
             max-height: 200px;
             color: #00FF00;
         }
+        .button-row {
+            display: flex;
+            flex-direction: row; /* Ensures the buttons are in a single row */
+            justify-content: space-around; /* Adds space between each button */
+            width: 100%; /* Make row width 100% of the container */
+        }
+
+        .button-row button {
+            flex: 1; /* Ensures each button takes an equal amount of space */
+            margin: 5px; /* Optional spacing around buttons */
+        }
+
+
+</style>
     </style>
     <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&display=swap" rel="stylesheet">
 </head>
@@ -96,8 +110,13 @@
         <div id="fileTree"></div>
         <textarea id="editor"></textarea>
     </div>
-    <button onclick="executeCode()"> Save</button>
-    <div id="shell"></div>
+    <div class="button-row">
+    <button onclick="saveCode()">Save</button>
+    <button onclick="encryptText()">Encrypt</button>
+    <button onclick="decryptText()">Decrypt</button>
+</div>
+
+    <!--div id="shell"></div-->
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.5/codemirror.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.5/mode/clojure/clojure.min.js"></script>
@@ -110,8 +129,10 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.5/mode/markdown/markdown.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.5/mode/clike/clike.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.5/mode/shell/shell.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.1.1/crypto-js.min.js"></script>
 
     <script>
+let file_path;
         const editor = CodeMirror.fromTextArea(document.getElementById('editor'), {
             mode: 'clojure',
             theme: 'dracula',
@@ -169,6 +190,8 @@ function displayFileTree(tree, container, currentPath) {
 document.addEventListener('DOMContentLoaded', () => fetchFileTree());
 
 async function loadFile(filePath) {
+    file_path = filePath; // Assign the file path automatically
+
     const response = await fetch(`/load-file?file_path=${encodeURIComponent(filePath)}`);
     if (response.ok) {
         const data = await response.json();
@@ -178,6 +201,62 @@ async function loadFile(filePath) {
         editor.setOption("mode", data.mode);
     } else {
         alert("Failed to load file: " + (await response.json()).detail);
+    }
+}
+// Encrypt the text in the editor
+function encryptText() {
+    const code = editor.getValue();
+    const password = prompt("Enter a password for encryption:");
+    if (password) {
+        const encrypted = CryptoJS.AES.encrypt(code, password).toString();
+        editor.setValue(encrypted);
+        alert("Text encrypted successfully!");
+    } else {
+        alert("Encryption canceled.");
+    }
+}
+
+// Decrypt the text in the editor
+function decryptText() {
+    const encryptedText = editor.getValue();
+    const password = prompt("Enter the password for decryption:");
+    if (password) {
+        try {
+            const decrypted = CryptoJS.AES.decrypt(encryptedText, password).toString(CryptoJS.enc.Utf8);
+            if (decrypted) {
+                editor.setValue(decrypted);
+                alert("Text decrypted successfully!");
+            } else {
+                alert("Invalid password or corrupted text.");
+            }
+        } catch (error) {
+            alert("Decryption failed. Invalid password or corrupted text.");
+        }
+    } else {
+        alert("Decryption canceled.");
+    }
+}
+
+async function saveCode() {
+    const code = editor.getValue();
+
+    try {
+        const response = await fetch("/save-file/", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify({ file_path: file_path, content: code })
+        });
+
+        if (response.ok) {
+            const result = await response.json();
+            alert(result.message);
+        } else {
+            alert("Failed to save file. Please try again.");
+        }
+    } catch (error) {
+        alert("Error: " + error.message);
     }
 }
 
