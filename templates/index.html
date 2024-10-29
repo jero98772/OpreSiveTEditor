@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Operating System</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.5/codemirror.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.5/theme/dracula.min.css">
+    <style>
+        /* Starry background */
+        body {
+            font-family: 'Orbitron', sans-serif; /* Space-themed font */
+            background: black;
+            color: #00FF00; /* Green text color */
+            margin: 0;
+            padding: 0;
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        /* Header styling */
+        h1 {
+            margin: 20px;
+            font-size: 3rem;
+            text-shadow: 0 0 50px #00FF00, 0 0 1px #00FF00;
+            color: #00FF00;
+        }
+
+        /* Layout styling */
+        .container {
+            display: flex;
+            flex: 1;
+            overflow: hidden;
+        }
+
+        /* File tree styling */
+        #fileTree {
+            width: 250px; /* Fixed width for the file tree */
+            background-color: #1e1e1e;
+            border-right: 1px solid #00FF00;
+            padding: 10px;
+            overflow-y: auto;
+        }
+
+        /* CodeMirror editor styling */
+        .CodeMirror {
+            height: 100%; /* Make the editor fill the available space */
+            flex: 1;
+            border: 1px solid #00FF00;
+            border-radius: 10px;
+            box-shadow: 0 0 20px rgba(0, 0, 0, 0.5);
+        }
+
+        /* Button styling */
+        button {
+            margin-top: 20px;
+            padding: 10px 20px;
+            font-size: 1.2rem;
+            border: none;
+            border-radius: 5px;
+            background: #00FF00;
+            color: #000;
+            cursor: pointer;
+            transition: box-shadow 0.3s ease-in-out, transform 0.3s ease-in-out;
+            box-shadow: 0 0 10px #00FF00, 0 0 20px #00FF00;
+        }
+
+        button:hover {
+            box-shadow: 0 0 20px #00FF00, 0 0 40px #00FF00;
+            transform: translateY(-3px);
+        }
+
+        /* Shell output styling */
+        #shell {
+            white-space: pre-wrap;
+            margin-top: 20px;
+            padding: 15px;
+            width: 90%;
+            max-width: 800px;
+            background-color: #1e1e1e;
+            border: 1px solid #00FF00;
+            border-radius: 10px;
+            box-shadow: 0 0 20px rgba(0, 0, 0, 0.5);
+            overflow-y: auto;
+            max-height: 200px;
+            color: #00FF00;
+        }
+    </style>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&display=swap" rel="stylesheet">
+</head>
+<body>
+    <h1>Operating System</h1>
+    <div class="container">
+        <div id="fileTree"></div>
+        <textarea id="editor"></textarea>
+    </div>
+    <button onclick="executeCode()"> Save</button>
+    <div id="shell"></div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.5/codemirror.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.5/mode/clojure/clojure.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.5/addon/edit/closebrackets.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.5/addon/edit/matchbrackets.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.5/mode/python/python.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.5/mode/javascript/javascript.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.5/mode/htmlmixed/htmlmixed.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.5/mode/css/css.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.5/mode/markdown/markdown.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.5/mode/clike/clike.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.5/mode/shell/shell.min.js"></script>
+
+    <script>
+        const editor = CodeMirror.fromTextArea(document.getElementById('editor'), {
+            mode: 'clojure',
+            theme: 'dracula',
+            lineNumbers: true,
+            autoCloseBrackets: true,
+            matchBrackets: true
+        });
+// Updated function to fetch and display the file tree
+async function fetchFileTree(path = null) {
+    const response = await fetch(`/tree${path ? `?path=${encodeURIComponent(path)}` : ''}`);
+    if (response.ok) {
+        const fileTree = await response.json();
+        displayFileTree(fileTree, document.getElementById('fileTree'), path);
+    } else {
+        console.error("Failed to fetch file tree");
+    }
+}
+
+// Display the file tree in the UI
+function displayFileTree(tree, container, currentPath) {
+    container.innerHTML = ''; // Clear previous content
+
+    // If we're not at the root, add an "Up" option
+    if (currentPath) {
+        const upElement = document.createElement('div');
+        upElement.textContent = '⬆️ Up';
+        upElement.style.cursor = 'pointer';
+        upElement.onclick = () => {
+            // Go up one directory level
+            const parentPath = currentPath.substring(0, currentPath.lastIndexOf('/'));
+            fetchFileTree(parentPath || null); // Navigate to the parent directory
+        };
+        container.appendChild(upElement);
+    }
+
+    // Display the files and directories
+    tree.forEach(item => {
+        const element = document.createElement('div');
+        element.textContent = item.name;
+        element.style.cursor = 'pointer';
+        element.onclick = () => {
+            if (item.type === 'directory') {
+                // If directory, fetch its contents
+                fetchFileTree(item.path);
+            } else {
+                // If file, load its contents into the editor
+                loadFile(item.path);
+            }
+        };
+        container.appendChild(element);
+    });
+}
+
+// Fetch the file tree on page load
+document.addEventListener('DOMContentLoaded', () => fetchFileTree());
+
+async function loadFile(filePath) {
+    const response = await fetch(`/load-file?file_path=${encodeURIComponent(filePath)}`);
+    if (response.ok) {
+        const data = await response.json();
+        editor.setValue(data.content);
+        
+        // Set syntax highlighting mode based on the file type
+        editor.setOption("mode", data.mode);
+    } else {
+        alert("Failed to load file: " + (await response.json()).detail);
+    }
+}
+
+    </script>
+</body>
+</html>
