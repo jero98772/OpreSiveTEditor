@@ -128,7 +128,3 @@ The application utilizes AES (Advanced Encryption Standard) for encrypting and d
 ## License
 
 This project is licensed under the MIT License. See the [LICENSE](LICENSE) file for details.
-
----
-
-Feel free to modify the sections or add more details as necessary to match your specific implementation and project requirements! If you have additional features or sections you want to include, just let me know.
