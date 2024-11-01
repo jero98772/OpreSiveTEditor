@@ -37,7 +37,8 @@ This project provides a FastAPI-based API for managing files, including function
    ```bash
    python -m venv venv
    source venv/bin/activate  # On Windows use `venv\Scripts\activate`
-   pip install fastapi[all] pycryptodome
+   pip install fastapi[all] uvicorn
+
    ```
 
 ## Running the Application
