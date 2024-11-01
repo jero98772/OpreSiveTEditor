@@ -1,8 +1,4 @@
 # OpreSiveTEditor
-Text editor for my future project  web desktop enviroment 
-Here’s a README template that explains the encryption and decryption features of your FastAPI application, along with instructions on how to run it.
-
----
 
 # File Management API with Encryption/Decryption
 
@@ -125,6 +121,11 @@ The application utilizes AES (Advanced Encryption Standard) for encrypting and d
 
 ### Important Note on AES Key
 - The AES key must be kept secure. If the key is lost, the encrypted data cannot be recovered.
+
+
+## Screenshots
+![](https://raw.githubusercontent.com/jero98772/OpreSiveTEditor/refs/heads/main/screenshots/1.png)
+![](https://raw.githubusercontent.com/jero98772/OpreSiveTEditor/refs/heads/main/screenshots/2.png)
 
 ## License
 
